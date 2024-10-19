@@ -3,11 +3,9 @@ import pyautogui
 import os, os.path
 import time
 
-#### HUGO....
-### IMPLEMENTAR ESQUEMA DE SAIR DA LUTA
-### E AI EU SEI QUE ESTOU INDO RPA ASTRUB ZAP
-### 
-##### TRATAR QUANDO EU VIRO FANTASMA...
+TEMPO_TROCA_MAPA = 8
+POS_TEMPLO_ASTRUB_X = 6
+POS_TEMPLO_ASTRUB_Y = -19
 
 # objeto que armazena o caminho dos itens
 obj_listagem_recursos = [
@@ -88,8 +86,6 @@ obj_coordenadas_recursos =  [
   [9, -11], 
   [3, -11]
 ]
-
-TEMPO_TROCA_MAPA = 8
 
 # com base no caminho fornecido, verificamos se a imagem existe no mapa atual
 # eu coloquei um delay de 5 segundos quando nao encontrar a imagem pra forcar ele encontrar
@@ -203,6 +199,7 @@ def main():
       for caminho in obj_listagem_recursos:
         s_caminho_recurso = './img' + caminho + '/'
         posicao = checar_imagem_no_mapa(s_caminho_recurso, 0.8, 1, 0)
+        
         if posicao:
           pyautogui.moveTo(posicao[0] + 5, posicao[1] + 5)
           pyautogui.click()
@@ -221,11 +218,15 @@ def main():
              
           pyautogui.click()
           time.sleep(TEMPO_TROCA_MAPA) 
-        else: print('\nTratar aqui quando virar fantasma...')
+          
+          i_pos_personagem_x = POS_TEMPLO_ASTRUB_X
+          i_pos_personagem_y = POS_TEMPLO_ASTRUB_Y
+          
+          continue
+        else: print('\n##HUGO::: Tratar aqui quando virar fantasma...')
           
       # se chegamos no nosso destino, entao buscamos uma nova rota
       if _key_pos_atual() == (i_pos_destino_x, i_pos_destino_y):
-        print("\nChegou no nosso destino..." + str(i_pos_destino_x) + ' - ' + str(i_pos_destino_y))
         indice_coord_destino += 1
         continue
 
