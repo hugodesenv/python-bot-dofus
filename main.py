@@ -3,6 +3,12 @@ import pyautogui
 import os, os.path
 import time
 
+#### HUGO....
+### IMPLEMENTAR ESQUEMA DE SAIR DA LUTA
+### E AI EU SEI QUE ESTOU INDO RPA ASTRUB ZAP
+### 
+##### TRATAR QUANDO EU VIRO FANTASMA...
+
 # objeto que armazena o caminho dos itens
 obj_listagem_recursos = [
   '/agua',
@@ -133,18 +139,42 @@ def buscar_nova_direcao(x_ou_y_str, posicao_atual, posicao_destino):
   else:
     return ''
   
+# verifica se o personagem está em luta e sai do mesmo
+def verifica_personagem_em_batalha():
+  b_embatalha = False
+  ordens_cliques = [
+    './img/util/batalha/sair/',
+    './img/util/batalha/confirmar/',
+    './img/util/batalha/fechar/'
+  ]
+  
+  for i in ordens_cliques:
+    posicao = checar_imagem_no_mapa(i, 0.8, 2, 2)
+    if posicao:
+      b_embatalha = True
+      pyautogui.moveTo(posicao[0], posicao[1])  
+      pyautogui.click()
+      time.sleep(2)
+      
+  return b_embatalha
+
 # funcao principal
 def main():
   # o primeiro passo eh testarmos se esta calculando certo a movimentacao do personagem
   i_pos_personagem_x = int(input('X: '))
   i_pos_personagem_y = int(input('Y: '))
-
   time.sleep(4)
 
   #---------------------------------------------------------------------------------------------------------------------
   # primeiro mapeamos o nosso mapa, verificando se ele existe lado que nao pode ser clicavel etc
   # guardando as informacoes no nosso objeto
-  def _key_pos_atual(): return (i_pos_personagem_x, i_pos_personagem_y)
+  # eu também guardo os logs num arquivo para testarmos o posicionament do personagem
+  def _key_pos_atual():
+    f = open('./log/posicao.personagem.log',  'w') 
+    f.write('Pos atual.: [' + str(i_pos_destino_x) + ', ' + str(i_pos_personagem_y) + ']')
+    f.close()
+      
+    return (i_pos_personagem_x, i_pos_personagem_y)
   #---------------------------------------------------------------------------------------------------------------------                                                                                      
 
   # laco principal pra aplicacao nao parar de rodar
@@ -177,10 +207,25 @@ def main():
           pyautogui.moveTo(posicao[0] + 5, posicao[1] + 5)
           pyautogui.click()
           time.sleep(10)
-
+          
+      # caso o nosos personagem esteja em batalha, saimos da luta
+      # neste caso ou iremos parar no templo dos doze em Astrub, ou vamos
+      # em busca da fenix para reviver.
+      # tratar abaixo no if true quando nao virar fantasma, senao tem que ir em busca da Fenix
+      time.sleep(1)
+      if verifica_personagem_em_batalha():
+        if True:
+          existe_seta_troca_mapa('esquerda')
+          i_pos_personagem_x, 
+          i_pos_personagem_y = calcular_troca_mapa('esquerda', i_pos_personagem_x, i_pos_personagem_y)    
+             
+          pyautogui.click()
+          time.sleep(TEMPO_TROCA_MAPA) 
+        else: print('\nTratar aqui quando virar fantasma...')
+          
       # se chegamos no nosso destino, entao buscamos uma nova rota
       if _key_pos_atual() == (i_pos_destino_x, i_pos_destino_y):
-        print("\nChegou no nosso destino...")
+        print("\nChegou no nosso destino..." + str(i_pos_destino_x) + ' - ' + str(i_pos_destino_y))
         indice_coord_destino += 1
         continue
 
@@ -193,13 +238,12 @@ def main():
         s_direcao_sugestiva = buscar_nova_direcao('y', i_pos_personagem_y, i_pos_destino_y)
       
       if s_direcao_sugestiva == '':
-        print('\nDireção sugestiva está vazia...')
         continue
       
       # se existe a seta para trocar de mapa, entao vamos la:
       if existe_seta_troca_mapa(s_direcao_sugestiva):
-        print('\nExiste a seta para trocarmos de mapa...' + s_direcao_sugestiva)
-        i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y)     
+        i_pos_personagem_x, 
+        i_pos_personagem_y = calcular_troca_mapa(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y)     
         
         pyautogui.click()
         time.sleep(TEMPO_TROCA_MAPA) 
@@ -220,39 +264,18 @@ def main():
             # eu nunca olho o primeiro por causa do "sentido contrario" que nao funcionaria
             # ja que o personagem possivelmente parou numa saida, entao devemos desconsidera-la
             if i > 0 and existe_seta_troca_mapa(s_direcao_sugestiva):
-              print('\nSaida encontrada...')
               obj_mapa_mapeado[_key_pos_atual()]['saidas'].append((i_pos_personagem_x, i_pos_personagem_y))              
               break
 
             if existe_seta_troca_mapa(direcao):
-              i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(direcao, i_pos_personagem_x, i_pos_personagem_y) 
+              i_pos_personagem_x,
+              i_pos_personagem_y = calcular_troca_mapa(direcao, i_pos_personagem_x, i_pos_personagem_y) 
               i += 1
               
               pyautogui.click()
               time.sleep(TEMPO_TROCA_MAPA)
             else: 
               print('\nNada a se fazer!')
-              break         
-              
-        # caso contrÃ¡rio, se nao existir entÃ£o vamos buscar a proxima saÃ­da, com isso guardamos seu posicionamento
-        # da posicao atual do personagem para poder voltar posteriormente
-        #index_proxima_saida = 0
-        
-        # para controle de voltar o personagem na posiÃ§Ã£o inicial ao mapear as saidas do mapa
-        #i_pos_personagem_inicial_x = i_pos_personagem_x
-        #i_pos_personagem_inicial_y = i_pos_personagem_y
-        
-        # percorremos entao as duas direÃ§oes, pra depois decidir a mais proxima
-        # isso Ã© feito apenas se nao conter o mapa mapeado jÃ¡
-        #while index_proxima_saida <= 1:
-        #  s_nova_direcao = obj_coordenadas_monitor[s_direcao_sugestiva]['direcoes_inversas'][index_proxima_saida]
-                
-        #  print('\nCalculando nova direÃ§Ã£o: ' + s_nova_direcao)
-        #  while ((i_pos_personagem_x != i_pos_personagem_inicial_x) or 
-        #         (i_pos_personagem_y != i_pos_personagem_inicial_y)):                  
-        #    if existe_seta_troca_mapa(s_nova_direcao):
-        #      i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(s_nova_direcao, i_pos_personagem_x, i_pos_personagem_y)     
-        #      pyautogui.click()
-        #      time.sleep(8)    
+              break           
     
 main()
