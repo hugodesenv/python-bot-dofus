@@ -4,8 +4,7 @@ import os, os.path
 import time
 
 TEMPO_TROCA_MAPA = 8
-POS_TEMPLO_ASTRUB_X = 6
-POS_TEMPLO_ASTRUB_Y = -19
+QTD_PIXEL_SETA_DIRECIONAL = 10          
 
 # objeto que armazena o caminho dos itens
 obj_listagem_recursos = [
@@ -19,23 +18,23 @@ obj_listagem_recursos = [
 # objeto que armazena em qual X e Y o ponteiro do mouse ficarÃ¡ para trocar de mapa:
 obj_coordenadas_monitor = {
   'cima': {
-    'horizontal': 1370,
-    'vertical': 35,
+    'horizontal': 1200,
+    'vertical': 0,
     'direcoes_inversas': ['esquerda', 'direita']
   },
   'baixo': {
-    'horizontal': 1300,
-    'vertical': 890,
+    'horizontal': 1200,
+    'vertical': 0,
     'direcoes_inversas': ['esquerda', 'direita']
   },
   'esquerda': {
-    'horizontal': 50,
-    'vertical': 400,
+    'horizontal': 0,
+    'vertical': 200,
     'direcoes_inversas': ['cima', 'baixo']
   },
   'direita': {
-    'horizontal': 1800,
-    'vertical': 600,
+    'horizontal': 0,
+    'vertical': 200,
     'direcoes_inversas': ['cima', 'baixo']
   },
 }
@@ -45,7 +44,7 @@ obj_coordenadas_monitor = {
   obj_mapa_mapeado = [
     [9, -25]{
       lados_bloqueados: ['direita', 'baixo'],
-      saidas: [{'x': 10, 'y': 20}, {'x': 2, 'y': -3}]
+      #saidas: [{'x': 10, 'y': 20}, {'x': 2, 'y': -3}]
     }
   ]
 '''
@@ -87,6 +86,8 @@ obj_coordenadas_recursos =  [
   [3, -11]
 ]
 
+POSICAO_RESPAWM = [6, -19]
+
 # com base no caminho fornecido, verificamos se a imagem existe no mapa atual
 # eu coloquei um delay de 5 segundos quando nao encontrar a imagem pra forcar ele encontrar
 def checar_imagem_no_mapa(s_caminho_imagem, f_confidence, i_qtde_repeticao, i_delay):
@@ -104,14 +105,14 @@ def checar_imagem_no_mapa(s_caminho_imagem, f_confidence, i_qtde_repeticao, i_de
     
   return posicao
 
-# funcao que verifica se existe a seta de direcionamento no mapa
+# funcao: verifica se existe a seta de direcionamento no mapa
 def existe_seta_troca_mapa(pdirecao):
   x = obj_coordenadas_monitor[pdirecao]['horizontal']
   y = obj_coordenadas_monitor[pdirecao]['vertical'] 
   
-  pyautogui.moveTo(x, y, 0.5)  
+  pyautogui.moveTo(x, y, 0.2)  
   
-  return checar_imagem_no_mapa('./img/seta/' + pdirecao + '/', 0.4, 2, 1)
+  return checar_imagem_no_mapa('./img/seta/' + pdirecao + '/', 0.4, 1, 1)
 
 # funcao interna para definirmos a movimentacao do personagem
 def calcular_troca_mapa(pdirecao, i_pos_personagem_x, i_pos_personagem_y):
@@ -125,17 +126,18 @@ def calcular_troca_mapa(pdirecao, i_pos_personagem_x, i_pos_personagem_y):
     i_pos_personagem_y -= 1
   return i_pos_personagem_x, i_pos_personagem_y
 
-# com base na direcao, calculamos a nova rota
+# funcao: com base na direcao, calculamos a nova rota
 def buscar_nova_direcao(x_ou_y_str, posicao_atual, posicao_destino):
   orientacao = {'x': ['direita', 'esquerda'], 'y': ['baixo', 'cima']}
+  
   if posicao_destino > posicao_atual:
     return orientacao[x_ou_y_str][0]
   elif posicao_destino < posicao_atual:
     return orientacao[x_ou_y_str][1]
   else:
     return ''
-  
-# verifica se o personagem está em luta e sai do mesmo
+
+# funcao: verifica e sai da batalha se o personagem estiver
 def verifica_personagem_em_batalha():
   b_embatalha = False
   ordens_cliques = [
@@ -154,85 +156,97 @@ def verifica_personagem_em_batalha():
       
   return b_embatalha
 
-# funcao principal
+# funcao: calcular a rota mais proxima entre dois ponto
+#def calcular_peso_distancia_manhattan(ix_A, iy_A, ix_B, iy_B):
+#  return abs(ix_A - ix_B) + abs(iy_A - iy_B)
+
+# funcao: setas
+def preparar_coordenadas_setas_direcionais():
+  for d in obj_coordenadas_monitor:
+    posicao_seta = None
+    pixel = 0
+
+    while posicao_seta == None:
+      pixel += QTD_PIXEL_SETA_DIRECIONAL
+      
+      if obj_coordenadas_monitor[d]['horizontal'] == 0:
+        pyautogui.moveTo(pixel, obj_coordenadas_monitor[d]['vertical'])
+      else:
+        pyautogui.moveTo(obj_coordenadas_monitor[d]['horizontal'], pixel)
+        
+      posicao_seta = checar_imagem_no_mapa('./img/seta/' + d + '/', 0.8, 1, 0)
+      
+      if posicao_seta:
+        obj_coordenadas_monitor[d]['horizontal'] = posicao_seta.left
+        obj_coordenadas_monitor[d]['vertical'] = posicao_seta.top
+        time.sleep(2)
+
+# funcao: principal
 def main():
-  # o primeiro passo eh testarmos se esta calculando certo a movimentacao do personagem
   i_pos_personagem_x = int(input('X: '))
   i_pos_personagem_y = int(input('Y: '))
-  time.sleep(4)
-
-  #---------------------------------------------------------------------------------------------------------------------
-  # primeiro mapeamos o nosso mapa, verificando se ele existe lado que nao pode ser clicavel etc
-  # guardando as informacoes no nosso objeto
-  # eu também guardo os logs num arquivo para testarmos o posicionament do personagem
-  def _key_pos_atual():
-    f = open('./log/posicao.personagem.log',  'w') 
-    f.write('Pos atual.: [' + str(i_pos_destino_x) + ', ' + str(i_pos_personagem_y) + ']')
-    f.close()
-      
-    return (i_pos_personagem_x, i_pos_personagem_y)
-  #---------------------------------------------------------------------------------------------------------------------                                                                                      
-
-  # laco principal pra aplicacao nao parar de rodar
-  # eu tambem passo dentro do for pra ele percorrer tanto na diagonal quanto na horizontal
-  # nessa variavel indice_coord_destino eu guardo o index que estamos indo, e quando chegamos incrementamos + 1
   indice_coord_destino = 0
   
-  while True:    
-    for X_Y in ['x', 'y']:
-      # armazeno o proximo indice destino
+  time.sleep(4)
+  
+  # fazemos a analise de coordenadas do monitor, guardando o posicionamento das setas
+  preparar_coordenadas_setas_direcionais()
+  
+  #---------------------------------------------------------------------------------------------------------------------
+  # funcao anonima 
+  def _key_pos_atual(): return (i_pos_personagem_x, i_pos_personagem_y)
+  #---------------------------------------------------------------------------------------------------------------------                                                                                      
+  
+  while True:  
+    # variavel para controle quando precisamos analisar a saida mais proxima 
+    direcoes_inversas = []
+    s_direcao_sugestiva = ''
+  
+    for X_Y in ['x', 'y']:      
       if indice_coord_destino == len(obj_coordenadas_recursos):
         indice_coord_destino = 0
       
       i_pos_destino_x = obj_coordenadas_recursos[indice_coord_destino][0]
       i_pos_destino_y = obj_coordenadas_recursos[indice_coord_destino][1]
 
-      # faz o mapeamento das posiÃ§Ãµes possiveis do mapa atual
-      if _key_pos_atual() not in obj_mapa_mapeado:
-        obj_mapa_mapeado[_key_pos_atual()] = { 'lados_bloqueados': [], 'saidas': [] }   
-        
+      # faz o mapeamento das posicoes possiveis do mapa atual
+      if _key_pos_atual() not in obj_mapa_mapeado: 
+        obj_mapa_mapeado[_key_pos_atual()] = { 'lados_bloqueados': [], 'saidas': [] }  
         for s_direcao in obj_coordenadas_monitor.keys():
           if not existe_seta_troca_mapa(s_direcao):
             obj_mapa_mapeado[_key_pos_atual()]['lados_bloqueados'].append(s_direcao)
 
       # coleta o recurso do mapa
-      for caminho in obj_listagem_recursos:
+      for caminho in obj_listagem_recursos:  
         s_caminho_recurso = './img' + caminho + '/'
-        posicao = checar_imagem_no_mapa(s_caminho_recurso, 0.8, 1, 0)
+        posicao = checar_imagem_no_mapa(s_caminho_recurso, 0.8, 1, 0.4)
         
         if posicao:
           pyautogui.moveTo(posicao[0] + 5, posicao[1] + 5)
           pyautogui.click()
           time.sleep(10)
-          
-      # caso o nosos personagem esteja em batalha, saimos da luta
-      # neste caso ou iremos parar no templo dos doze em Astrub, ou vamos
-      # em busca da fenix para reviver.
-      # tratar abaixo no if true quando nao virar fantasma, senao tem que ir em busca da Fenix
-      time.sleep(1)
+  
+      # esquema para sair da batalha
       if verifica_personagem_em_batalha():
         if True:
+          print('\n--> o personagem está em batalha, entao vamos sair da mesma')
           existe_seta_troca_mapa('esquerda')
-          i_pos_personagem_x, 
-          i_pos_personagem_y = calcular_troca_mapa('esquerda', i_pos_personagem_x, i_pos_personagem_y)    
-             
+          i_pos_personagem_x = POSICAO_RESPAWM[0]
+          i_pos_personagem_y = POSICAO_RESPAWM[1]
+            
           pyautogui.click()
           time.sleep(TEMPO_TROCA_MAPA) 
-          
-          i_pos_personagem_x = POS_TEMPLO_ASTRUB_X
-          i_pos_personagem_y = POS_TEMPLO_ASTRUB_Y
-          
           continue
-        else: print('\n##HUGO::: Tratar aqui quando virar fantasma...')
+        else: 
+          print('\n##HUGO::: Tratar aqui quando virar fantasma...')
           
-      # se chegamos no nosso destino, entao buscamos uma nova rota
+      # esquema par abuscar uma nova rota com base no indice 
       if _key_pos_atual() == (i_pos_destino_x, i_pos_destino_y):
         indice_coord_destino += 1
         continue
-
-      # descobrimos nossa proxima sugestao de direcao      
+    
       s_direcao_sugestiva = ''
-      
+            
       if X_Y == 'x':
         s_direcao_sugestiva = buscar_nova_direcao('x', i_pos_personagem_x, i_pos_destino_x)
       else:
@@ -243,40 +257,36 @@ def main():
       
       # se existe a seta para trocar de mapa, entao vamos la:
       if existe_seta_troca_mapa(s_direcao_sugestiva):
-        i_pos_personagem_x, 
-        i_pos_personagem_y = calcular_troca_mapa(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y)     
+        print('\n--> direcionando o personagem pra posicao ' + s_direcao_sugestiva)
+        i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y)     
         
         pyautogui.click()
         time.sleep(TEMPO_TROCA_MAPA) 
-      else:        
-        # vamos supor que queremos ir para a direita, e o nosso personagem nÃ£o pode ir pra direita porque
-        # existe um muro que o impede. Nesse caso, vamos calcular a melhor saÃ­da pro mesmo, sendo assim,
-        # primeiro a gente sobe o personagem atÃ© encontrar uma saÃ­da, e depois descemos o personagem atÃ© encontrar uma saÃ­da
-        # apos finalizar esses dois processos, voltamos o personagem pra posicao que estava e decidimos o melhor.
-        # em alguns casos pode ser que nao exista nem chegando no limite da posiÃ§ao inversa, por exemplo:
-        # supondo que eu quero achar a direita, entao tenho que subir, e subir, e subir... mas chega no final do mapa
-        # e nada acontece, entao paramos o processo.
+        
+      # se nao existir, vamos andar em ambas direcoes diferentes ate encontrar a saida
+      # quando encontrar, eu reseto
+      else:     
         direcoes_inversas = obj_coordenadas_monitor[s_direcao_sugestiva]['direcoes_inversas']
-     
+       
         for direcao in direcoes_inversas:
-          i = 0
           while True:
-            # se encontramos a saida, entao anotamos dentro do objeto
-            # eu nunca olho o primeiro por causa do "sentido contrario" que nao funcionaria
-            # ja que o personagem possivelmente parou numa saida, entao devemos desconsidera-la
-            if i > 0 and existe_seta_troca_mapa(s_direcao_sugestiva):
-              obj_mapa_mapeado[_key_pos_atual()]['saidas'].append((i_pos_personagem_x, i_pos_personagem_y))              
-              break
-
             if existe_seta_troca_mapa(direcao):
-              i_pos_personagem_x,
-              i_pos_personagem_y = calcular_troca_mapa(direcao, i_pos_personagem_x, i_pos_personagem_y) 
-              i += 1
+              i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(direcao, i_pos_personagem_x, i_pos_personagem_y) 
               
               pyautogui.click()
               time.sleep(TEMPO_TROCA_MAPA)
+            
+            # quando chegar ao fim da direcao (se existir mapa que isso pode ocorrer), tentamos o processo contrário
+            # eu nao sei se é possivel ir tanto pra direita e pra esquerda por exemplo e nao existir a saida pra cima
+            # nesse caso, eu trato num futuro se houver.
             else: 
-              print('\nNada a se fazer!')
-              break           
-    
+              break        
+            
+            if existe_seta_troca_mapa(s_direcao_sugestiva):
+              i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y) 
+              
+              indice_coord_destino = 0
+              pyautogui.click()
+              time.sleep(TEMPO_TROCA_MAPA)
+              
 main()
