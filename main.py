@@ -147,39 +147,20 @@ def verifica_personagem_em_batalha():
   ]
   
   for i in ordens_cliques:
-    posicao = checar_imagem_no_mapa(i, 0.8, 2, 2)
+    posicao = checar_imagem_no_mapa(i, 0.8, 2, 1)
     if posicao:
       b_embatalha = True
       pyautogui.moveTo(posicao[0], posicao[1])  
       pyautogui.click()
       time.sleep(2)
+    else:
+      break
       
   return b_embatalha
 
 # funcao: calcular a rota mais proxima entre dois ponto
 #def calcular_peso_distancia_manhattan(ix_A, iy_A, ix_B, iy_B):
 #  return abs(ix_A - ix_B) + abs(iy_A - iy_B)
-
-# funcao: setas
-def preparar_coordenadas_setas_direcionais():
-  for d in obj_coordenadas_monitor:
-    posicao_seta = None
-    pixel = 0
-
-    while posicao_seta == None:
-      pixel += QTD_PIXEL_SETA_DIRECIONAL
-      
-      if obj_coordenadas_monitor[d]['horizontal'] == 0:
-        pyautogui.moveTo(pixel, obj_coordenadas_monitor[d]['vertical'])
-      else:
-        pyautogui.moveTo(obj_coordenadas_monitor[d]['horizontal'], pixel)
-        
-      posicao_seta = checar_imagem_no_mapa('./img/seta/' + d + '/', 0.8, 1, 0)
-      
-      if posicao_seta:
-        obj_coordenadas_monitor[d]['horizontal'] = posicao_seta.left
-        obj_coordenadas_monitor[d]['vertical'] = posicao_seta.top
-        time.sleep(2)
 
 # funcao: principal
 def main():
@@ -189,12 +170,67 @@ def main():
   
   time.sleep(4)
   
-  # fazemos a analise de coordenadas do monitor, guardando o posicionamento das setas
-  preparar_coordenadas_setas_direcionais()
+  # obtendo o tamanho da tela para mapearmos as setas direcionais
+  screen_width, screen_height = pyautogui.size()
+  
+  #  mapeando seta direcional da direita
+  print('\nMapeando seta direcional direita...')
+  indice_pixel = screen_width + 15
+  
+  while True:
+    indice_pixel -= 15
+    pyautogui.moveTo(indice_pixel, obj_coordenadas_monitor['direita']['vertical'])
+
+    if checar_imagem_no_mapa('./img/seta/direita/', 0.8, 1, 1):
+      obj_coordenadas_monitor['direita']['horizontal'] = pyautogui.position().x
+      break
+    
+  pyautogui.moveTo(obj_coordenadas_monitor['direita']['horizontal'],
+                  obj_coordenadas_monitor['direita']['vertical'])
+    
+  # mapeando seta direcional de cima
+  print('\nMapeando seta direcional de cima')
+  indice_pixel = 0
+  
+  while True:
+    indice_pixel += 15
+    pyautogui.moveTo(obj_coordenadas_monitor['cima']['horizontal'], indice_pixel)
+  
+    if checar_imagem_no_mapa('./img/seta/cima/', 0.8, 1, 1):
+      obj_coordenadas_monitor['cima']['vertical'] = pyautogui.position().y
+      break
+  
+  # mapeando seta direcional de baixo
+  print('\nMapeando seta direcional de baixo')
+  indice_pixel = screen_height + 15
+  
+  while True:
+    indice_pixel -= 15
+    pyautogui.moveTo(obj_coordenadas_monitor['baixo']['horizontal'], indice_pixel)
+    
+    if checar_imagem_no_mapa('./img/seta/baixo/', 0.8, 1, 1):
+      obj_coordenadas_monitor['baixo']['vertical'] = pyautogui.position().y
+      break
+  
+  # mapeando seta direcional da esquerda
+  print('\nMapeando seta direcional da esquerda')
+  indice_pixel = 0
+  
+  while True:
+    indice_pixel += 15
+    pyautogui.moveTo(indice_pixel, obj_coordenadas_monitor['esquerda']['vertical'])
+        
+    if checar_imagem_no_mapa('./img/seta/esquerda/', 0.8, 1, 1):
+      obj_coordenadas_monitor['esquerda']['horizontal'] = pyautogui.position().x
+      break
   
   #---------------------------------------------------------------------------------------------------------------------
   # funcao anonima 
-  def _key_pos_atual(): return (i_pos_personagem_x, i_pos_personagem_y)
+  def _key_pos_atual(): 
+    print('\n--> Estamos nas posicoes abaixo: ')
+    print('\n--> ' + str(i_pos_personagem_x))
+    print('\n--> ' + str(i_pos_personagem_y))
+    return (i_pos_personagem_x, i_pos_personagem_y)
   #---------------------------------------------------------------------------------------------------------------------                                                                                      
   
   while True:  
@@ -210,6 +246,8 @@ def main():
       i_pos_destino_y = obj_coordenadas_recursos[indice_coord_destino][1]
 
       # faz o mapeamento das posicoes possiveis do mapa atual
+      print('Realizando o mapeamento das coordenadas do mapa atual')
+      
       if _key_pos_atual() not in obj_mapa_mapeado: 
         obj_mapa_mapeado[_key_pos_atual()] = { 'lados_bloqueados': [], 'saidas': [] }  
         for s_direcao in obj_coordenadas_monitor.keys():
@@ -217,19 +255,23 @@ def main():
             obj_mapa_mapeado[_key_pos_atual()]['lados_bloqueados'].append(s_direcao)
 
       # coleta o recurso do mapa
+      print('Coletando recursos')
+      
       for caminho in obj_listagem_recursos:  
         s_caminho_recurso = './img' + caminho + '/'
-        posicao = checar_imagem_no_mapa(s_caminho_recurso, 0.8, 1, 0.4)
+        posicao = checar_imagem_no_mapa(s_caminho_recurso, 0.9, 1, 1)
         
-        if posicao:
+        if posicao: 
           pyautogui.moveTo(posicao[0] + 5, posicao[1] + 5)
           pyautogui.click()
           time.sleep(10)
   
       # esquema para sair da batalha
+      print('Verificando se o personagem está em batalha')
+      
       if verifica_personagem_em_batalha():
         if True:
-          print('\n--> o personagem está em batalha, entao vamos sair da mesma')
+          print('O personagem esta em batalha')
           existe_seta_troca_mapa('esquerda')
           i_pos_personagem_x = POSICAO_RESPAWM[0]
           i_pos_personagem_y = POSICAO_RESPAWM[1]
@@ -242,6 +284,7 @@ def main():
           
       # esquema par abuscar uma nova rota com base no indice 
       if _key_pos_atual() == (i_pos_destino_x, i_pos_destino_y):
+        print('Chegando a posicao destino, vamos resetar')
         indice_coord_destino += 1
         continue
     
@@ -257,7 +300,6 @@ def main():
       
       # se existe a seta para trocar de mapa, entao vamos la:
       if existe_seta_troca_mapa(s_direcao_sugestiva):
-        print('\n--> direcionando o personagem pra posicao ' + s_direcao_sugestiva)
         i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y)     
         
         pyautogui.click()
@@ -265,7 +307,9 @@ def main():
         
       # se nao existir, vamos andar em ambas direcoes diferentes ate encontrar a saida
       # quando encontrar, eu reseto
-      else:     
+      else: 
+        print('Buscando uma direcao alternativa')
+            
         direcoes_inversas = obj_coordenadas_monitor[s_direcao_sugestiva]['direcoes_inversas']
        
         for direcao in direcoes_inversas:
