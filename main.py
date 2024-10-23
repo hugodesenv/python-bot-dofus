@@ -2,18 +2,11 @@
 import pyautogui
 import os, os.path
 import time
+from controller.ctrMapa import *
+from config.constantes import *
+from lib.libCalculo import *
 
-TEMPO_TROCA_MAPA = 8
-QTD_PIXEL_SETA_DIRECIONAL = 10          
-
-# objeto que armazena o caminho dos itens
-obj_listagem_recursos = [
-  '/agua',
-  '/arvore/arvore_freixo',
-  '/arvore/arvore_boldo',
-  '/arvore/arvore_castanheiro',
-  '/planta/urtiga'
-]
+ctrMapa = CtrMapa()
 
 # objeto que armazena em qual X e Y o ponteiro do mouse ficarÃ¡ para trocar de mapa:
 obj_coordenadas_monitor = {
@@ -52,59 +45,6 @@ obj_coordenadas_monitor = {
 # objeto que guardamos o mapeamento do nosso mapa atual (lados que nao podem ser clicaveis etc)
 obj_mapa_mapeado = {}
 
-# coordenadas dos recursos a serem coletados (hoje estou trabalhando apenas com urtiga e agua, depois verificar se precisar de mais coisa)
-obj_coordenadas_recursos =  [
-  [1,-27], 
-  [1, -22], 
-  [2, -21], 
-  [2, -30], 
-  [3, -30], 
-  [3, -31], 
-  [3, -20], 
-  [4, -20], 
-  [4, -31], 
-  [5, -30], 
-  [5, -29], 
-  [6, -30], 
-  [6, -26], 
-  [7, -26], 
-  [7, -22], 
-  [8, -22], 
-  [7, -21], 
-  [7, -16], 
-  [1, -16], 
-  [1, -15], 
-  [4, -15], 
-  [3, -16], 
-  [3, -14], 
-  [9, -14], 
-  [10, -13], 
-  [3, -13], 
-  [3, -12], 
-  [11, -12], 
-  [9, -11], 
-  [3, -11]
-]
-
-POSICAO_RESPAWM = [6, -19]
-
-# com base no caminho fornecido, verificamos se a imagem existe no mapa atual
-# eu coloquei um delay de 5 segundos quando nao encontrar a imagem pra forcar ele encontrar
-def checar_imagem_no_mapa(s_caminho_imagem, f_confidence, i_qtde_repeticao, i_delay):
-  posicao = None
-  for i in range(i_qtde_repeticao):
-    for imagem in os.listdir(s_caminho_imagem):
-      try:
-        posicao = pyautogui.locateOnScreen(s_caminho_imagem + imagem, confidence=f_confidence)  
-      except: pass
-      
-    if posicao: 
-      break
-    
-    time.sleep(i_delay)
-    
-  return posicao
-
 # funcao: verifica se existe a seta de direcionamento no mapa
 def existe_seta_troca_mapa(pdirecao):
   x = obj_coordenadas_monitor[pdirecao]['horizontal']
@@ -112,45 +52,17 @@ def existe_seta_troca_mapa(pdirecao):
   
   pyautogui.moveTo(x, y, 0.2)  
   
-  return checar_imagem_no_mapa('./img/seta/' + pdirecao + '/', 0.4, 1, 1)
-
-# funcao interna para definirmos a movimentacao do personagem
-def calcular_troca_mapa(pdirecao, i_pos_personagem_x, i_pos_personagem_y):
-  if pdirecao == 'direita':
-    i_pos_personagem_x += 1
-  elif pdirecao == 'esquerda':
-    i_pos_personagem_x -= 1
-  elif pdirecao == 'baixo':
-    i_pos_personagem_y += 1
-  elif pdirecao == 'cima':
-    i_pos_personagem_y -= 1
-  return i_pos_personagem_x, i_pos_personagem_y
-
-# funcao: com base na direcao, calculamos a nova rota
-def buscar_nova_direcao(x_ou_y_str, posicao_atual, posicao_destino):
-  orientacao = {'x': ['direita', 'esquerda'], 'y': ['baixo', 'cima']}
-  
-  if posicao_destino > posicao_atual:
-    return orientacao[x_ou_y_str][0]
-  elif posicao_destino < posicao_atual:
-    return orientacao[x_ou_y_str][1]
-  else:
-    return ''
+  return ctrMapa.verificaImagemExiste(pCaminhoImagem='./img/seta/' + pdirecao)
 
 # funcao: verifica e sai da batalha se o personagem estiver
 def verifica_personagem_em_batalha():
   b_embatalha = False
-  ordens_cliques = [
-    './img/util/batalha/sair/',
-    './img/util/batalha/confirmar/',
-    './img/util/batalha/fechar/'
-  ]
-  
-  for i in ordens_cliques:
-    posicao = checar_imagem_no_mapa(i, 0.8, 2, 1)
-    if posicao:
+
+  for i in ordens_cliques_sair_da_batalha:
+    x, y = ctrMapa.verificaImagemExiste(i)
+    if x > 0:
       b_embatalha = True
-      pyautogui.moveTo(posicao[0], posicao[1])  
+      pyautogui.moveTo(x, y)  
       pyautogui.click()
       time.sleep(2)
     else:
@@ -181,12 +93,11 @@ def main():
     indice_pixel -= 15
     pyautogui.moveTo(indice_pixel, obj_coordenadas_monitor['direita']['vertical'])
 
-    if checar_imagem_no_mapa('./img/seta/direita/', 0.8, 1, 1):
-      obj_coordenadas_monitor['direita']['horizontal'] = pyautogui.position().x
-      break
+    _, _, x, y = ctrMapa.verificaImagemExiste('./img/seta/direita')
     
-  pyautogui.moveTo(obj_coordenadas_monitor['direita']['horizontal'],
-                  obj_coordenadas_monitor['direita']['vertical'])
+    if x > 0:
+      obj_coordenadas_monitor['direita']['horizontal'] = x
+      break
     
   # mapeando seta direcional de cima
   print('\nMapeando seta direcional de cima')
@@ -195,9 +106,11 @@ def main():
   while True:
     indice_pixel += 15
     pyautogui.moveTo(obj_coordenadas_monitor['cima']['horizontal'], indice_pixel)
+    
+    _, _, x, y = ctrMapa.verificaImagemExiste('./img/seta/cima')
   
-    if checar_imagem_no_mapa('./img/seta/cima/', 0.8, 1, 1):
-      obj_coordenadas_monitor['cima']['vertical'] = pyautogui.position().y
+    if x > 0:
+      obj_coordenadas_monitor['cima']['vertical'] = y
       break
   
   # mapeando seta direcional de baixo
@@ -208,8 +121,10 @@ def main():
     indice_pixel -= 15
     pyautogui.moveTo(obj_coordenadas_monitor['baixo']['horizontal'], indice_pixel)
     
-    if checar_imagem_no_mapa('./img/seta/baixo/', 0.8, 1, 1):
-      obj_coordenadas_monitor['baixo']['vertical'] = pyautogui.position().y
+    _, _, x, y = ctrMapa.verificaImagemExiste('./img/seta/baixo')
+    
+    if x > 0:
+      obj_coordenadas_monitor['baixo']['vertical'] = y
       break
   
   # mapeando seta direcional da esquerda
@@ -220,16 +135,15 @@ def main():
     indice_pixel += 15
     pyautogui.moveTo(indice_pixel, obj_coordenadas_monitor['esquerda']['vertical'])
         
-    if checar_imagem_no_mapa('./img/seta/esquerda/', 0.8, 1, 1):
-      obj_coordenadas_monitor['esquerda']['horizontal'] = pyautogui.position().x
+    _, _, x, y = ctrMapa.verificaImagemExiste('./img/seta/esquerda')    
+    
+    if x > 0:
+      obj_coordenadas_monitor['esquerda']['horizontal'] = x
       break
   
   #---------------------------------------------------------------------------------------------------------------------
   # funcao anonima 
   def _key_pos_atual(): 
-    print('\n--> Estamos nas posicoes abaixo: ')
-    print('\n--> ' + str(i_pos_personagem_x))
-    print('\n--> ' + str(i_pos_personagem_y))
     return (i_pos_personagem_x, i_pos_personagem_y)
   #---------------------------------------------------------------------------------------------------------------------                                                                                      
   
@@ -259,10 +173,10 @@ def main():
       
       for caminho in obj_listagem_recursos:  
         s_caminho_recurso = './img' + caminho + '/'
-        posicao = checar_imagem_no_mapa(s_caminho_recurso, 0.9, 1, 1)
+        x, y = ctrMapa.verificaImagemExiste(s_caminho_recurso)
         
-        if posicao: 
-          pyautogui.moveTo(posicao[0] + 5, posicao[1] + 5)
+        if x > 0: 
+          pyautogui.moveTo(x + 5, y + 5)
           pyautogui.click()
           time.sleep(10)
   
@@ -291,16 +205,16 @@ def main():
       s_direcao_sugestiva = ''
             
       if X_Y == 'x':
-        s_direcao_sugestiva = buscar_nova_direcao('x', i_pos_personagem_x, i_pos_destino_x)
+        s_direcao_sugestiva = LibMapa.buscarNovaDirecao('x', i_pos_personagem_x, i_pos_destino_x)
       else:
-        s_direcao_sugestiva = buscar_nova_direcao('y', i_pos_personagem_y, i_pos_destino_y)
+        s_direcao_sugestiva = LibMapa.buscarNovaDirecao('y', i_pos_personagem_y, i_pos_destino_y)
       
       if s_direcao_sugestiva == '':
         continue
       
       # se existe a seta para trocar de mapa, entao vamos la:
       if existe_seta_troca_mapa(s_direcao_sugestiva):
-        i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y)     
+        i_pos_personagem_x, i_pos_personagem_y = LibCalculo.calcularProximaCoordenada(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y)     
         
         pyautogui.click()
         time.sleep(TEMPO_TROCA_MAPA) 
@@ -315,7 +229,7 @@ def main():
         for direcao in direcoes_inversas:
           while True:
             if existe_seta_troca_mapa(direcao):
-              i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(direcao, i_pos_personagem_x, i_pos_personagem_y) 
+              i_pos_personagem_x, i_pos_personagem_y = LibCalculo.calcularProximaCoordenada(direcao, i_pos_personagem_x, i_pos_personagem_y) 
               
               pyautogui.click()
               time.sleep(TEMPO_TROCA_MAPA)
@@ -327,7 +241,7 @@ def main():
               break        
             
             if existe_seta_troca_mapa(s_direcao_sugestiva):
-              i_pos_personagem_x, i_pos_personagem_y = calcular_troca_mapa(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y) 
+              i_pos_personagem_x, i_pos_personagem_y = LibCalculo.calcularProximaCoordenada(s_direcao_sugestiva, i_pos_personagem_x, i_pos_personagem_y) 
               
               indice_coord_destino = 0
               pyautogui.click()
