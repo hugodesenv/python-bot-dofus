@@ -50,7 +50,7 @@ def existe_seta_troca_mapa(pdirecao):
   
   pyautogui.moveTo(x, y, 0.2)  
   
-  return LibMapa.obt(pCaminhoImagem='./img/seta/' + pdirecao)
+  return LibMapa.obterPontoDaImagem(pCaminhoImagem='./img/seta/' + pdirecao)
 
 # funcao: verifica e sai da batalha se o personagem estiver
 def verifica_personagem_em_batalha():
