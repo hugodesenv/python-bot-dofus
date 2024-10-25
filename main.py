@@ -2,11 +2,9 @@
 import pyautogui
 import os, os.path
 import time
-from controller.ctrMapa import *
 from config.constantes import *
 from lib.libCalculo import *
-
-ctrMapa = CtrMapa()
+from lib.libMapa import *
 
 # objeto que armazena em qual X e Y o ponteiro do mouse ficarÃ¡ para trocar de mapa:
 obj_coordenadas_monitor = {
@@ -52,14 +50,14 @@ def existe_seta_troca_mapa(pdirecao):
   
   pyautogui.moveTo(x, y, 0.2)  
   
-  return ctrMapa.verificaImagemExiste(pCaminhoImagem='./img/seta/' + pdirecao)
+  return LibMapa.obt(pCaminhoImagem='./img/seta/' + pdirecao)
 
 # funcao: verifica e sai da batalha se o personagem estiver
 def verifica_personagem_em_batalha():
   b_embatalha = False
 
   for i in ordens_cliques_sair_da_batalha:
-    x, y = ctrMapa.verificaImagemExiste(i)
+    x, y, _, _ = LibMapa.verificaImagemExiste(i)
     if x > 0:
       b_embatalha = True
       pyautogui.moveTo(x, y)  
@@ -93,7 +91,7 @@ def main():
     indice_pixel -= 15
     pyautogui.moveTo(indice_pixel, obj_coordenadas_monitor['direita']['vertical'])
 
-    _, _, x, y = ctrMapa.verificaImagemExiste('./img/seta/direita')
+    _, _, x, y = LibMapa.verificaImagemExiste('./img/seta/direita')
     
     if x > 0:
       obj_coordenadas_monitor['direita']['horizontal'] = x
@@ -107,7 +105,7 @@ def main():
     indice_pixel += 15
     pyautogui.moveTo(obj_coordenadas_monitor['cima']['horizontal'], indice_pixel)
     
-    _, _, x, y = ctrMapa.verificaImagemExiste('./img/seta/cima')
+    _, _, x, y = LibMapa.verificaImagemExiste('./img/seta/cima')
   
     if x > 0:
       obj_coordenadas_monitor['cima']['vertical'] = y
@@ -121,7 +119,7 @@ def main():
     indice_pixel -= 15
     pyautogui.moveTo(obj_coordenadas_monitor['baixo']['horizontal'], indice_pixel)
     
-    _, _, x, y = ctrMapa.verificaImagemExiste('./img/seta/baixo')
+    _, _, x, y = LibMapa.verificaImagemExiste('./img/seta/baixo')
     
     if x > 0:
       obj_coordenadas_monitor['baixo']['vertical'] = y
@@ -135,7 +133,7 @@ def main():
     indice_pixel += 15
     pyautogui.moveTo(indice_pixel, obj_coordenadas_monitor['esquerda']['vertical'])
         
-    _, _, x, y = ctrMapa.verificaImagemExiste('./img/seta/esquerda')    
+    _, _, x, y = LibMapa.verificaImagemExiste('./img/seta/esquerda')    
     
     if x > 0:
       obj_coordenadas_monitor['esquerda']['horizontal'] = x
@@ -173,7 +171,7 @@ def main():
       
       for caminho in obj_listagem_recursos:  
         s_caminho_recurso = './img' + caminho + '/'
-        x, y = ctrMapa.verificaImagemExiste(s_caminho_recurso)
+        x, y, _, _ = LibMapa.verificaImagemExiste(s_caminho_recurso)
         
         if x > 0: 
           pyautogui.moveTo(x + 5, y + 5)
