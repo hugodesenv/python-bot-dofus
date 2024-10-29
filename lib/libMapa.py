@@ -1,7 +1,10 @@
 import pyautogui
 import cv2
 import numpy as np
+from config.constantes import *
 import os, os.path
+from pynput.keyboard import Listener  # pip install pynput
+from pynput import keyboard
 
 class LibMapa:
   @staticmethod
@@ -68,3 +71,68 @@ class LibMapa:
         pass
        
     return x, y, -1, -1  
+  
+  @staticmethod
+  def sairDaBatalha():
+    b_embatalha = False
+
+    for i in ordens_cliques_sair_da_batalha:
+      x, y, _, _ = LibMapa.verificaImagemExiste(i)
+      if x > 0:
+        b_embatalha = True
+        pyautogui.moveTo(x, y)  
+        pyautogui.click()
+        pyautogui.sleep(2)
+      else:
+        break
+        
+    return b_embatalha
+
+  # nesse método eu peço para que o usuario posicione o mouse no canto
+  # da tela para que podemos armazenar as direcionais pra poder posicionar
+  # o mouse e mudar de mapa.
+  @staticmethod
+  def mapearCantosDirecionaisDaTela():
+    res = {
+      'cima': {
+        'horizontal': 0,
+        'vertical': 0,
+        'direcoes_inversas': ['esquerda', 'direita']
+      },
+      'baixo': {
+        'horizontal': 0,
+        'vertical': 0,
+        'direcoes_inversas': ['esquerda', 'direita']
+      },
+      'esquerda': {
+        'horizontal': 0,
+        'vertical': 0,
+        'direcoes_inversas': ['cima', 'baixo']
+      },
+      'direita': {
+        'horizontal': 0,
+        'vertical': 0,
+        'direcoes_inversas': ['cima', 'baixo']
+      },
+    }
+    
+    def _capturarPosicao(direcao):
+      print(f"\n--> Posicione o mouse na direcao e pressione F9: {direcao}")      
+      def _keyboard_handler(key):
+        if key == keyboard.Key.esc:
+          return False
+        elif key == keyboard.Key.f9:
+          mouse_x, mouse_y = pyautogui.position()
+          res[direcao]['horizontal'] = mouse_x
+          res[direcao]['vertical'] = mouse_y
+          return False
+        
+      with Listener(on_press=_keyboard_handler) as listener:
+        listener.join()
+        
+    _capturarPosicao('cima')
+    _capturarPosicao('direita')
+    _capturarPosicao('baixo')
+    _capturarPosicao('esquerda')
+  
+    return res
