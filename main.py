@@ -11,6 +11,7 @@ PubCoordenadasMonitor = {}
 
 # funcao: verifica se existe a seta de direcionamento no mapa
 def existeSetaTrocaMapa(dir):
+  #print("** Dentro da funcao existeSetaTrocaMapa")
   global PubCoordenadasMonitor
   
   pyautogui.moveTo(
@@ -42,23 +43,39 @@ def main():
       
       i_pos_destino_x = obj_coordenadas_recursos[indice][0]
       i_pos_destino_y = obj_coordenadas_recursos[indice][1]
-
-      #--> coleta o recurso do mapa
-      print('\nIniciando o processo da coleta do recurso')
-      for caminho in obj_listagem_recursos:  
-        s_caminho_recurso = './img' + caminho + '/'
-        x, y, _, _ = LibMapa.verificaImagemExiste(s_caminho_recurso)
+      
+      ###########################TESTE MELHORARRR#######################################
+      print("--> Teste Hugo, coletando Urtiga")
+      x, y, _, _ = LibMapa.verificaImagemExiste('./img/planta/urtiga/')
+      if x > 0:
+        pyautogui.click(x + 5, y + 5)
+        time.sleep(8)
         
-        if x > 0: 
-          pyautogui.moveTo(x + 5, y + 5)
-          pyautogui.click()
-          time.sleep(10)
-  
+      print("--> Teste Hugo, coletando Salvia")
+      x, y, _, _ = LibMapa.verificaImagemExiste('./img/planta/salvia/')
+      if x > 0:
+        pyautogui.click(x + 5, y + 5)
+        time.sleep(8) 
+        
+      print("--> Teste Hugo, coletando Freixo")
+      x, y, _, _ = LibMapa.verificaImagemExiste('./img/arvore/arvore_freixo/')
+      if x > 0:
+        pyautogui.click(x + 5, y + 5)
+        time.sleep(8) 
+        
+      print("--> Teste Hugo, coletando Trevo")
+      x, y, _, _ = LibMapa.verificaImagemExiste('./img/planta/trevo/')
+      if x > 0:
+        pyautogui.click(x + 5, y + 5)
+        time.sleep(8) 
+      ##################################################################
+        
+
       #--> esquema para sair da batalha
       if LibMapa.sairDaBatalha():
-        print('\nVerificando se o personagem está em batalha')
+        #print('\nVerificando se o personagem está em batalha')
         if True:
-          print('O personagem esta em batalha')
+          #print('O personagem esta em batalha')
           existeSetaTrocaMapa('esquerda')
           i_pos_personagem_x = POSICAO_RESPAWM[0]
           i_pos_personagem_y = POSICAO_RESPAWM[1]
@@ -87,6 +104,10 @@ def main():
       #--> se existe a seta para trocar de mapa, entao vamos la:
       if existeSetaTrocaMapa(proximaDirecao):
         i_pos_personagem_x, i_pos_personagem_y = LibCalculo.calcularProximaCoordenada(proximaDirecao, i_pos_personagem_x, i_pos_personagem_y)     
+        
+        print(f"Próxima posição X: {i_pos_personagem_x}")
+        print(f"Próxima posição Y: {i_pos_personagem_y}")
+        
         pyautogui.click()
         time.sleep(TEMPO_TROCA_MAPA) 
         
