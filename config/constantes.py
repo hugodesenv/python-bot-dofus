@@ -1,15 +1,7 @@
-obj_listagem_recursos = [
-  '/agua',
-  '/arvore/arvore_freixo',
-  '/arvore/arvore_boldo',
-  '/arvore/arvore_castanheiro',
-  '/planta/urtiga'
-]
-
 TEMPO_TROCA_MAPA = 8
 QTD_PIXEL_SETA_DIRECIONAL = 10      
 
-obj_coordenadas_recursos =  [
+coordenadas =  [
   [1,-27], 
   [1, -22], 
   [2, -21], 

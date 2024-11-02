@@ -5,6 +5,7 @@ from config.constantes import *
 import os, os.path
 from pynput.keyboard import Listener  # pip install pynput
 from pynput import keyboard
+import time
 
 class LibMapa:
   @staticmethod
@@ -97,22 +98,22 @@ class LibMapa:
       'cima': {
         'horizontal': 0,
         'vertical': 0,
-        'direcoes_inversas': ['esquerda', 'direita']
+        'direcoes_inversas': ['esquerda', 'direita', 'baixo']
       },
       'baixo': {
         'horizontal': 0,
         'vertical': 0,
-        'direcoes_inversas': ['esquerda', 'direita']
+        'direcoes_inversas': ['esquerda', 'direita', 'cima']
       },
       'esquerda': {
         'horizontal': 0,
         'vertical': 0,
-        'direcoes_inversas': ['cima', 'baixo']
+        'direcoes_inversas': ['cima', 'baixo', 'direita']
       },
       'direita': {
         'horizontal': 0,
         'vertical': 0,
-        'direcoes_inversas': ['cima', 'baixo']
+        'direcoes_inversas': ['cima', 'baixo', 'esquerda']
       },
     }
     
@@ -136,3 +137,11 @@ class LibMapa:
     _capturarPosicao('esquerda')
   
     return res
+  
+  @staticmethod
+  def movimentarPersonagem(x, y):
+    pyautogui.click()
+    time.sleep(TEMPO_TROCA_MAPA) 
+    imgLocalAtualTeste = pyautogui.screenshot()
+    imgLocalAtualTeste.save(f"./log/[{x},{y}].png")
+    print(f"** movimentacao do personagem: {x} e {y}")
